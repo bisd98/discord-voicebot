@@ -1,7 +1,8 @@
 from dotenv import load_dotenv
-import discord
+from openai_api.openai_model import model_response
 from discord.ext import commands
-import os 
+import discord
+import os
 
 load_dotenv()
 
@@ -14,9 +15,26 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+# Events
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    
+    if message.content.startswith(bot.command_prefix):
+        await bot.process_commands(message)
+        return
+    
+    messages = [{"role": "user", "content": message.content}]
+    response = model_response(messages)
+    await message.channel.send(response)
+
+#Commands
 
 @bot.command(name='hello')
 async def hello_command(ctx):
@@ -41,10 +59,8 @@ async def leave_command(ctx):
 
 @bot.command(name='shutdown', hidden=True)
 async def shutdown_command(ctx):
-    if ctx.author.id == owner_id:
+    if str(ctx.author.id) == owner_id:
         await ctx.send('Shutting down...')
         await bot.close()
     else:
         await ctx.send('You do not have permission to shut down the bot.')
-
-bot.run(discord_token)

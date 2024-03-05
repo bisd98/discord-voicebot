@@ -1,5 +1,8 @@
 {
     "cSpell.words": [
-        "dotenv"
+        "aiohttp",
+        "dotenv",
+        "openai",
+        "voicebot"
     ]
 }
