@@ -3,6 +3,7 @@
         "aiohttp",
         "dotenv",
         "openai",
+        "pynacl",
         "voicebot"
     ]
 }

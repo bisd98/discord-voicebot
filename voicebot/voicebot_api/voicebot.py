@@ -1,8 +1,13 @@
 from dotenv import load_dotenv
-from openai_api.openai_model import model_response
+import os
+
+from openai_api.openai_model import model_audio_response, model_response
+
 from discord.ext import commands
 import discord
-import os
+import io
+import asyncio
+
 
 load_dotenv()
 
@@ -33,6 +38,8 @@ async def on_message(message):
     messages = [{"role": "user", "content": message.content}]
     response = model_response(messages)
     await message.channel.send(response)
+    await play_audio(message.author.voice.channel, response=response)
+        
 
 #Commands
 
@@ -64,3 +71,15 @@ async def shutdown_command(ctx):
         await bot.close()
     else:
         await ctx.send('You do not have permission to shut down the bot.')
+        
+async def play_audio(voice_channel, response):
+    if voice_channel:
+        
+        audio_data = model_audio_response(response)
+
+        voice_client = discord.utils.get(bot.voice_clients, guild=voice_channel.guild)
+        audio_source = discord.FFmpegPCMAudio(io.BytesIO(audio_data), pipe=True)
+        voice_client.play(audio_source)
+        
+        while voice_client.is_playing():
+            await asyncio.sleep(1)
