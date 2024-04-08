@@ -39,4 +39,3 @@ def gcloud_stt(audio_data):
 	text = response.results[0].alternatives[0].transcript if len(response.results) > 0 else ''
 
 	return text
-
