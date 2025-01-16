@@ -1,12 +1,29 @@
-from dotenv import load_dotenv
+"""Discord bot implementation for voice assistant integration.
+
+This module provides the Discord bot implementation that interfaces with the voice
+assistant system. It handles:
+- Voice channel connections
+- Command processing
+- Message handling
+- Voice recording management
+- Bot lifecycle management
+
+Classes:
+    DiscordBot: Custom Discord bot implementation
+
+Commands:
+    listen: Start voice assistant in current channel
+    stop_listening: Stop voice assistant in current channel
+    shutdown: Gracefully shut down the bot (owner only)
+"""
+
 import os
 
-from openai_api.openai_models import openai_gpt
-from discord_vc_tools.audio_api import AudioListener
-
-from discord.ext import commands
 import discord
+from discord.ext import commands
+from dotenv import load_dotenv
 
+from voice_assistant.assistant import VoiceAssistant
 
 load_dotenv()
 
@@ -15,27 +32,43 @@ discord_token = os.getenv("DISCORD_TOKEN")
 
 
 class DiscordBot(commands.Bot):
+    """Custom Discord bot with voice assistant capabilities.
+
+    Attributes:
+        voice_assistant (VoiceAssistant): Voice assistant instance
+    """
+
     def __init__(self) -> None:
+        """Initialize bot with required intents and voice assistant."""
         intents = discord.Intents.default()
         intents.voice_states = True
         intents.message_content = True
         super().__init__(command_prefix="!", intents=intents)
-        self.audio_listener = None
-        self.tc_system_prompt = "Jesteś voicebotem na platformie Discord. Twoje imię to Alvin. Odpowiadaj zawsze zwięźle i krótko, maksymalnie na 100 słów."
+        self.voice_assistant = VoiceAssistant()
 
 
 bot = DiscordBot()
-
-# Events
+connections = {}
 
 
 @bot.event
 async def on_ready():
+    """Handle bot ready event.
+
+    Logs successful login information.
+    """
     print(f"Logged in as {bot.user.name}")
 
 
 @bot.event
-async def on_message(message):
+async def on_message(message: discord.Message):
+    """Handle incoming messages.
+
+    Processes commands and generates responses for regular messages.
+
+    Args:
+        message (discord.Message): Received message
+    """
     if message.author == bot.user:
         return
 
@@ -44,73 +77,78 @@ async def on_message(message):
         return
 
     messages = [
-        {"role": "system", "content": bot.tc_system_prompt},
+        {
+            "role": "system",
+            "content": "Jesteś zabawnym asystentem tekstowym na platformie Discord. Twoje imię to Alvin. Odpowiadaj zawsze zwięźle i krótko, maksymalnie na 100 słów.",
+        },
         {"role": "user", "content": message.content},
     ]
-    response = openai_gpt(messages)
+    response = (
+        await bot.voice_assistant.language_model.language_model.get_chat_response(
+            messages
+        )
+    )
     await message.channel.send(response)
 
 
-# Commands
+@bot.command(name="listen")
+async def listen(ctx):
+    """Start voice assistant in current voice channel.
+
+    Args:
+        ctx: Command context
+    """
+    voice = ctx.author.voice
+
+    if not voice:
+        await ctx.send("You aren't in a voice channel!")
+
+    vc = await voice.channel.connect()
+    connections.update({ctx.guild.id: vc})
+
+    await bot.voice_assistant.listen()
+
+    vc.start_recording(
+        bot.voice_assistant.audio_input.audio_sink, once_done, ctx.channel
+    )
+    await ctx.send("Started listening!")
 
 
-@bot.command(name="hello")
-async def hello_command(ctx):
-    await ctx.send("Hello!")
+async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args):
+    """Handle completion of voice recording.
+
+    Args:
+        sink (discord.sinks): Audio sink instance
+        channel (discord.TextChannel): Channel for notifications
+        *args: Additional arguments
+    """
+    await bot.voice_assistant.stop_listening()
 
 
-@bot.command(name="join")
-async def join_command(ctx):
-    if ctx.author.voice:
-        channel = ctx.author.voice.channel
-        voice_channel = await channel.connect()
-        await ctx.send(f"Joined {channel}")
+@bot.command()
+async def stop_listening(ctx):
+    """Stop voice assistant in current channel.
+
+    Args:
+        ctx: Command context
+    """
+    if ctx.guild.id in connections:
+        vc = connections[ctx.guild.id]
+        vc.stop_recording()
+        del connections[ctx.guild.id]
     else:
-        await ctx.send("You are not in a voice channel.")
-
-
-@bot.command(name="leave")
-async def leave_command(ctx):
-    if ctx.voice_client:
-        await ctx.voice_client.disconnect()
-        await ctx.send("Left the voice channel.")
-    else:
-        await ctx.send("I am not in a voice channel.")
+        await ctx.send("I am currently not listening here.")
 
 
 @bot.command(name="shutdown", hidden=True)
 async def shutdown_command(ctx):
+    """Shut down the bot (owner only).
+
+    Args:
+        ctx: Command context
+    """
     if str(ctx.author.id) == owner_id:
         await ctx.send("Shutting down...")
         await bot.close()
     else:
         await ctx.send("You do not have permission to shut down the bot.")
-
-
-@bot.command(name="listen")
-async def listen(ctx):
-    if ctx.author.voice is None or ctx.author.voice.channel is None:
-        await ctx.send("You are not connected to a voice channel.")
-    else:
-        bot.audio_listener = AudioListener()
-        bot.loop.create_task(bot.audio_listener.message_sending_loop(bot.guilds[0]))
-        await bot.audio_listener.listen(ctx.author)
-
-
-@bot.command(name="stop_listening")
-async def stop_listening(ctx):
-    await bot.audio_listener.stop_listening()
-    bot.audio_listener = None
-
-
-@bot.command(name="check")
-async def listen(ctx):
-    await ctx.send(f"Voice channel: {ctx.author.voice.channel}")
-    await ctx.send(f"Text channel: {ctx.channel}")
-
-
-@bot.command(name="stop")
-async def stop_command(ctx):
-    if ctx.voice_client:
-        ctx.voice_client.stop()
-        await ctx.send("Stopped playing audio.")
