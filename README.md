@@ -2,32 +2,15 @@
 
 **Description**
 
-This project contains the source code for a Discord voicebot named Alvin. Alvin is designed to work with the Polish language, but due to the models used, it can be modified to work with any language.
+This project contains the source code for a Discord voicebot named Alvin. Alvin is designed to work with the Polish language, but due to the OpenAI models used via API, it can be modified to work with any language.
 
 **Features:**
 
-* 🤔 Answering questions
-* 🎉 Playing games
-* 🗣️ Polish language support
-* 💬 Text channel conversation
-* 🗣️ Voice channel chat
-* 🎙️ Voice channel conversation
-* 🤖 Named bot (Alvin)
-* 👂 User-specific listening
+* 👂 Capturing incoming audio on Discord voice channels (using the [Pycord](https://github.com/Pycord-Development/pycord))
+* 🗣️ Recognizing user speech using OpenAI Whisper speech to text model
+* 💬 Generating answers to user queries using the OpenAI GPT model
+* 🤖 Generating realistic speech using OpenAI text to speech model
 
-🔜 **NEW** Features to be added in the near future!
-
-* 🎶 Playing music
-* 👮 Moderating chat
-* 🌐 Language agnostic
-* 🖼️ Image generation
-* 🤖 Bot personalization
-
-**Additional features:**
-
-* 👂 Capturing incoming audio on Discord voice channels (using the discord-ext-voice-recv module: [https://github.com/imayhaveborkedit/discord-ext-voice-recv](https://github.com/imayhaveborkedit/discord-ext-voice-recv))
-* 🤖 Generating realistic speech using gcloud text to speech models
-* 🗣️ Recognizing user speech using gcloud speech to text models
 
 ## Installation
 
@@ -38,7 +21,6 @@ This project contains the source code for a Discord voicebot named Alvin. Alvin 
 pip install -r requirements.txt
 ```
 3. Configure environment variables.
-4. Enable and authorize google cloud services. 
 5. Go to the voicebot directory.
 6. Run the bot:
 
@@ -66,12 +48,6 @@ OPENAI_API_KEY=your_openai_api_key
 * Replace your_discord_user_id with your numerical Discord ID in integer type (enable Developer Mode in Discord settings to find this).
 * Replace your_openai_api_key with your API key from OpenAI in string type.
 
-### Authorization
-
-* **Google Cloud**: To use gcloud text to speech and speech to text models, you need to:
-
-    * Enable the **Text-to-Speech** and **Speech-to-Text** APIs in the Google Cloud platform.
-    * Authorize using the following command in your console: `gcloud auth login`
 
 ## Usage
 
@@ -85,9 +61,7 @@ OPENAI_API_KEY=your_openai_api_key
 
 The bot supports the following commands:
 
-* `join`: Alvin joins the voice channel of the user who called the command
-* `leave`: Alvin leaves the voice channel he is currently in
-* `listen`: Alvin joins the voice channel of the user who called the command and starts listening (currently the bot cannot be in the channel while using this command)
+* `listen`: Alvin joins the voice channel of the user who called the command and starts listening
 * `stop_listening`: Alvin stops listening and disconnects from the voice channel
 * `shutdown`: Alvin disconnects from the server
 
@@ -95,7 +69,7 @@ The bot supports the following commands:
 
 **Development**
 
-This project is still under development. We encourage you to report bugs and suggestions for the development of the bot.
+This project is still under development. I encourage you to report bugs and suggestions for the development of the bot.
 
 **License**
 
@@ -105,7 +79,7 @@ This project is licensed under the MIT license.
 
 * Discord API: [https://discord.com/developers/docs/intro](https://discord.com/developers/docs/intro)
 * Python Discord API Wrapper: [https://github.com/Rapptz/discord.py](https://github.com/Rapptz/discord.py)
-* discord-ext-voice-recv: [https://github.com/imayhaveborkedit/discord-ext-voice-recv](https://github.com/imayhaveborkedit/discord-ext-voice-recv)
+* Pycord: [https://github.com/Pycord-Development/pycord](https://github.com/Pycord-Development/pycord)
 
 **Acknowledgments**
 
