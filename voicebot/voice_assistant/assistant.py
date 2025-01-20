@@ -243,13 +243,23 @@ class TextToSpeech:
             for i in range(0, len(segments), chunk_size)
         ]
 
-        tasks = [
-            asyncio.create_task(self.synthesizer.get_text_to_speech(chunk))
-            for chunk in chunks
-        ]
-
-        for task in tasks:
-            audio_data = await task
+        running_task = None
+        for i, chunk in enumerate(chunks):
+            if i < len(chunks) - 1:
+                asyncio.create_task(
+                    self.synthesizer.get_text_to_speech(chunks[i + 1])
+                    )
+            
+            if running_task:
+                audio_data = await running_task
+                await self.text_to_speech_queue.put(audio_data)
+            
+            running_task = asyncio.create_task(
+                self.synthesizer.get_text_to_speech(chunk)
+            )
+        
+        if running_task:
+            audio_data = await running_task
             await self.text_to_speech_queue.put(audio_data)
 
 
@@ -280,7 +290,7 @@ class AudioOutput:
                 audio_sink.vc.play(audio_source)
 
                 while audio_sink.vc.is_playing():
-                    await asyncio.sleep(0.2)
+                    await asyncio.sleep(0.5)
 
 
 class VoiceAssistant:
@@ -307,7 +317,7 @@ class VoiceAssistant:
             "activate_words": ["alvin", "alwin"],
             "chat_history": [],
             "message_call": None,
-            "caller_id": None,
+            "caller_id": None
         }
 
         self._message_task: Optional[asyncio.Task] = None
