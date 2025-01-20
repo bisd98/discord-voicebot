@@ -4,27 +4,24 @@ This module provides a singleton client for interacting with OpenAI's APIs,
 handling both chat completions and text-to-speech operations asynchronously.
 
 Attributes:
-    OpenAIClient: Singleton class for OpenAI API interactions
+    OpenAIClient: Singleton class for AsyncOpenAI API interactions
 """
 
-import asyncio
 import os
-from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List
 
-import openai
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 
 class OpenAIClient:
-    """Singleton client for OpenAI API interactions.
+    """Singleton client for AsyncOpenAI API interactions.
 
     Implements singleton pattern for managing OpenAI API credentials
     and providing async methods for chat and speech synthesis.
 
     Attributes:
-        client (OpenAI): OpenAI API client instance
+        client (AsyncOpenAI): AsyncOpenAI API client instance
         _instance (OpenAIClient): Singleton instance reference
     """
 
@@ -40,7 +37,7 @@ class OpenAIClient:
             cls._instance = super(OpenAIClient, cls).__new__(cls)
             load_dotenv()
             api_key = os.getenv("OPENAI_API_KEY")
-            cls._instance.client = OpenAI(api_key=api_key)
+            cls._instance.client = AsyncOpenAI(api_key=api_key)
         return cls._instance
 
     async def get_chat_response(self, messages: List[Dict[str, str]]) -> str:
@@ -52,20 +49,14 @@ class OpenAIClient:
 
         Returns:
             str: Generated response text
-        """
-        loop = asyncio.get_event_loop()
-        executor = ThreadPoolExecutor()
-
-        response = await loop.run_in_executor(
-            executor,
-            lambda: self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages,
-                max_tokens=600,
-                n=1,
-                stop=None,
-                temperature=0.7,
-            ),
+        """   
+        response = await self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            max_tokens=600,
+            n=1,
+            stop=None,
+            temperature=0.7,
         )
 
         message = response.choices[0].message.content
@@ -82,16 +73,10 @@ class OpenAIClient:
         Returns:
             bytes: Raw audio data in supported format
         """
-        loop = asyncio.get_event_loop()
-        executor = ThreadPoolExecutor()
-
-        response = await loop.run_in_executor(
-            executor,
-            lambda: openai.audio.speech.create(
-                model="tts-1",
-                voice="echo",
-                input=text,
-            ),
+        response = await self.client.audio.speech.create(
+            model="tts-1",
+            voice="echo",
+            input=text,
         )
 
         audio_data = response.content
