@@ -371,7 +371,7 @@ class VoiceAssistant:
                 if self._process_transcriptions_task is not None:
                     self._process_transcriptions_task.cancel()
                 self.audio_input.audio_sink.cleanup()
-                self.language_model.language_model.client.close()
+                await self.language_model.language_model.client.close()
                 await self.audio_queue.put(None)
                 await self.speech_to_text_queue.put(None)
             except Exception as e:
