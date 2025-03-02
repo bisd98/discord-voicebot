@@ -130,7 +130,7 @@ class BufferAudioSink(Sink):
             voice_data (bytes): Raw voice data
             user (int): User ID of speaker
         """
-        if len(voice_data) == 3840:
+        if len(voice_data) <= 3840:
             self._process_data(user, voice_data)
         else:
             # silcence packets
