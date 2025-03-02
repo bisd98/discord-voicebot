@@ -23,7 +23,8 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from voice_assistant.assistant import VoiceAssistant
+#from voice_assistant.assistant import VoiceAssistant
+from voice_assistant.agent import VoiceAssistant
 
 load_dotenv()
 
@@ -37,15 +38,12 @@ class DiscordBot(commands.Bot):
     Attributes:
         voice_assistant (VoiceAssistant): Voice assistant instance
     """
-
     def __init__(self) -> None:
-        """Initialize bot with required intents and voice assistant."""
         intents = discord.Intents.default()
         intents.voice_states = True
         intents.message_content = True
         super().__init__(command_prefix="!", intents=intents)
         self.voice_assistant = VoiceAssistant()
-
 
 bot = DiscordBot()
 connections = {}
@@ -69,6 +67,7 @@ async def on_message(message: discord.Message):
     Args:
         message (discord.Message): Received message
     """
+
     if message.author == bot.user:
         return
 
@@ -84,7 +83,7 @@ async def on_message(message: discord.Message):
         {"role": "user", "content": message.content},
     ]
     response = (
-        await bot.voice_assistant.language_model.language_model.get_chat_response(
+        await bot.voice_assistant.large_language_model.get_chat_response(
             messages
         )
     )
@@ -105,11 +104,9 @@ async def listen(ctx):
 
     vc = await voice.channel.connect()
     connections.update({ctx.guild.id: vc})
-
-    await bot.voice_assistant.listen()
-
+    
     vc.start_recording(
-        bot.voice_assistant.audio_input.audio_sink, once_done, ctx.channel
+        bot.voice_assistant.audio_sink, once_done, ctx.channel
     )
     await ctx.send("Started listening!")
 
@@ -122,7 +119,7 @@ async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args):
         channel (discord.TextChannel): Channel for notifications
         *args: Additional arguments
     """
-    await bot.voice_assistant.stop_listening()
+    await bot.voice_assistant.clear_assistant_components()
 
 
 @bot.command()
