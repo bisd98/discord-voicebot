@@ -41,7 +41,7 @@ class OpenAIClient:
         return cls._instance
 
     async def get_chat_response(self, messages: List[Dict[str, str]]) -> str:
-        """Generate chat response using GPT-4 model asynchronously.
+        """Generate chat response using GPT-4o mini model asynchronously.
 
         Args:
             messages (List[Dict[str, str]]): List of message dictionaries with
